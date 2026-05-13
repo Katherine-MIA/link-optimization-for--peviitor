@@ -9,6 +9,8 @@ jobs:
   cleanup:
     if: github.repository == 'Katherine-MIA/link-optimization-for--peviitor'
     runs-on: ubuntu-latest
+    env:
+      JAVA_TOOL_OPTIONS: -Djdk.httpclient.keepalive.timeout=2
 
     steps:
       - name: Checkout repository
