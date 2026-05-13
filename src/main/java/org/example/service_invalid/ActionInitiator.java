@@ -51,7 +51,7 @@ public class ActionInitiator {
         }catch (URISyntaxException | NullPointerException e){
             logger.severe("Error: " + e.getMessage() + "\n" + "URI Issue tried to create URI with string: " + URL + tick.toString());
         }catch (IOException | InterruptedException e){
-            tick++;
+            //tick++;
             logger.warning("Could not send pe viitor request. Message: " + e.getMessage());
             Thread.currentThread().interrupt();
         }
@@ -131,19 +131,20 @@ public class ActionInitiator {
         ArrayList<Thread> threads = new ArrayList<>();
         ArrayList<RequestMaker> requestMakers = new ArrayList<>();
         List<String> deletionURLs = new ArrayList<>();
-        int threadNumber = jobs.size()/160;
-        if((!jobs.isEmpty() && threadNumber == 0) || (jobs.size() % 160 != 0 )){
+        int numberUrlsPerThread = 240;
+        int threadNumber = jobs.size()/numberUrlsPerThread;
+        if((!jobs.isEmpty() && threadNumber == 0) || (jobs.size() % numberUrlsPerThread != 0 )){
             threadNumber++;
         }
         if( threadNumber != 0 ){
             for (int i = 0; i < threadNumber; i++) {
                 System.out.println("Starting threads total: " + threadNumber);
-                int j = i*160;
-                if(j < jobs.size() && j+160 > jobs.size()){
-                    requestMakers.add(new RequestMaker(listMaker(j, jobs.size(), jobs), null));
+                int j = i*numberUrlsPerThread;
+                if(j < jobs.size() && j+numberUrlsPerThread > jobs.size()){
+                    requestMakers.add(new RequestMaker(listMaker(j, jobs.size(), jobs)));
                     threads.add(new Thread(requestMakers.get(i)));
                 } else {
-                    requestMakers.add(new RequestMaker(listMaker(j, j+160, jobs), null));
+                    requestMakers.add(new RequestMaker(listMaker(j, j+numberUrlsPerThread, jobs)));
                     threads.add(new Thread(requestMakers.get(i)));
                 }
                 threads.get(i).start();
