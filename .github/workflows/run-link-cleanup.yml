@@ -1,0 +1,25 @@
+name: Run Link Cleanup
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    if: github.repository == 'Katherine-MIA/link-optimization-for--peviitor'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Run application
+        run: mvn -B -q compile exec:java -Dexec.mainClass=org.example.Main
