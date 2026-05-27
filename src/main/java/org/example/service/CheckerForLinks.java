@@ -88,7 +88,7 @@ public class CheckerForLinks {
         String s1 = HttpUrl.parse(originalLink).toString();
         String s2 = HttpUrl.parse(finalLink).toString();
         //if(cleanLink(originalLink).equals(cleanLink(finalLink)))
-        if(s1 == s2)
+        if(s1.equals(s2))
             return true;
         return false;
     }
