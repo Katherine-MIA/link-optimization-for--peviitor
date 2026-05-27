@@ -3,9 +3,12 @@ package org.example.service_invalid;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +36,10 @@ public class RequestMaker implements Runnable {
         return checkURL;
     }
 
+    private String encodeURL(String url){
+        return URLEncoder.encode(url, StandardCharsets.UTF_8);
+    }
+
     @Override
     public void run() {
         if (checkURL == null || checkURL.isEmpty())
@@ -40,7 +47,7 @@ public class RequestMaker implements Runnable {
         for (int i = 0; i < checkURL.size(); i++) {
             try {
                 HttpRequest getRequest = HttpRequest.newBuilder()
-                        .uri(new URI(checkURL.get(i)))
+                        .uri(new URI(encodeURL(checkURL.get(i))))
                         .build();
                 HttpResponse<String> getResponse;
                 //getResponse = httpClient.send(headRequest, HttpResponse.BodyHandlers.ofString());

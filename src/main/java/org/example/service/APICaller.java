@@ -1,73 +1,90 @@
 package org.example.service;
 
+
 import com.google.gson.Gson;
-import org.apache.hc.client5.http.classic.methods.HttpDelete;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.core5.http.HttpEntity;
-import org.apache.hc.core5.http.ParseException;
-import org.apache.hc.core5.http.io.HttpClientResponseHandler;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.apache.hc.core5.http.io.entity.StringEntity;
+import jdk.jfr.ContentType;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import org.example.model.Job;
 import org.example.model.ResponseWrapper;
+import org.example.model.UrlsDTO;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class APICaller {
-    private final String GET_URL = "https://api.peviitor.ro/v1/search/?page=";
-    private final String DELETE_URL = "https://api.peviitor.ro/v1/delete/";
-    private CloseableHttpClient httpClient;
-    private Logger logger ;
+    private static final String SEARCH_JOB_URL = "https://api.peviitor.ro/v1/search/?page=";
+    private static final String DELETE_JOBS_URL = "https://api.peviitor.ro/v1/delete/";
+    private OkHttpClient okHttpClient;
+    private Integer tick;
+    private Logger logger = LoggerFactory.getLogger(APICaller.class);
 
-
-    public APICaller(CloseableHttpClient httpClient) {
-        this.httpClient = httpClient;
+    public APICaller(OkHttpClient okHttpClient) {
+        this.okHttpClient = okHttpClient;
+        this.tick = 0;
     }
 
-    public ResponseWrapper getRequestPerPage(String pageNumber) {
-        HttpGet httpGet = new HttpGet(GET_URL + pageNumber);
-        CloseableHttpResponse closeableResponse;
-        ResponseWrapper responseWrapper = null;
-        try {
-            closeableResponse = httpClient.execute(httpGet);
-            if(closeableResponse.getCode() == 200){
+    private void setTick(Integer numFound){
+        if(numFound % 12 == 0){
+            this.tick = numFound/12;
+        } else {
+            this.tick = numFound/12 + 1;
+        }
+    }
+
+    public Integer getTick(){
+        return this.tick;
+    }
+
+    public ArrayList<String> getJobsOnePage() {
+        ArrayList<String> jobUrls = new ArrayList<>();
+        Request request = new Request.Builder()
+                .url(SEARCH_JOB_URL + tick)
+                .get()
+                .build();
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            if(response.code() == 200 && response.body() != null) {
                 Gson gson = new Gson();
-                responseWrapper = gson.fromJson(EntityUtils.toString(closeableResponse.getEntity()), ResponseWrapper.class);
+                String body = response.body().string();
+                ResponseWrapper responseWrapper = gson.fromJson(body, ResponseWrapper.class);
+                if(tick == 0){
+                    setTick(responseWrapper.getResponse().getNumFound());
+                }
+                jobUrls = responseWrapper.getResponse()
+                        .getDocs()
+                        .stream()
+                        .map(Job::getUrl)
+                        .collect(Collectors.toCollection(ArrayList :: new ));
             }
-//            String jsonString = httpClient.execute(httpGet, response -> {
-//                return EntityUtils.toString(response.getEntity());
-//            });
-//            Gson gson = new Gson();
-//            ResponseWrapper responseWrapper = gson.fromJson(jsonString, ResponseWrapper.class);
-        }catch (IOException | ParseException e) {
-            System.out.println(e.getMessage());
+            logger.trace("Api call for page " + tick + " returned: " + response.code() + "\n");
+        } catch (IOException e) {
+            logger.error("Request failed for API page " + tick + ": " + e.getMessage());
         }
-//         finally {
-//            //EntityUtils.consume(closeableResponse.getEntity());
-//        }
-        return responseWrapper;
+        tick--;
+        return jobUrls;
     }
 
-    public String deleteRequest(List<String> urls){
+    public void deleteAPICall(UrlsDTO urls) {
+        if(urls.getUrls() == null || urls.getUrls().isEmpty())
+            return;
         Gson gson = new Gson();
-        HttpDelete delete = new HttpDelete(DELETE_URL);
-        delete.setEntity(new StringEntity(gson.toJson(urls)));
-
-        HttpClientResponseHandler handler = response -> {
-            try (HttpEntity entity = response.getEntity()) {
-                return EntityUtils.toString(entity);
-            }
-        };
-        CloseableHttpResponse response = null;
-        try {
-            response = (CloseableHttpResponse) httpClient.execute(delete, handler);
+        String stringBody = gson.toJson(urls, UrlsDTO.class);
+        RequestBody body = RequestBody.create(stringBody, MediaType.get("application/json; charset=utf-8"));
+        Request request = new Request.Builder()
+                .url(DELETE_JOBS_URL)
+                .delete(body)
+                .build();
+        try(Response response = okHttpClient.newCall(request).execute()){
+            logger.trace("Delete was successful for " + urls.getUrls().size() + "links. Code: " + response.code() + "\n");
         } catch (IOException e) {
-            logger.info("Error on delete: ", e);
-            return "Error";
+            logger.error("Could not delete: " + e.getMessage() , e);
         }
-        return response.getEntity().toString();
     }
 }
