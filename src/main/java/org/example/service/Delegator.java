@@ -4,6 +4,7 @@ package org.example.service;
 import okhttp3.CipherSuite;
 import okhttp3.ConnectionPool;
 import okhttp3.ConnectionSpec;
+import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 import okhttp3.TlsVersion;
 import org.example.model.UrlsDTO;
@@ -33,11 +34,21 @@ public class Delegator {
             .followRedirects(true)
             .followSslRedirects(true)
             .retryOnConnectionFailure(true)
+            .dispatcher(setDispatcher())
             .build();
     private APICaller apiCaller;
 
     public Delegator() {
         this.apiCaller = new APICaller(client);
+    }
+
+    private static Dispatcher setDispatcher(){
+        Dispatcher dispatcher = new Dispatcher();
+        // Default number on non-custom dispatcher is 64; Changed to 200 for the number of threads
+        dispatcher.setMaxRequests(200);
+        //May need to be adjusted -> default number on default dispatcher is 5
+        //dispatcher.setMaxRequestsPerHost(2);
+        return dispatcher;
     }
 
     public List<String> callOnePage() {
