@@ -1,12 +1,16 @@
 package org.example.service;
 
 
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.CipherSuite;
 import okhttp3.ConnectionSpec;
+import okhttp3.Dispatcher;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import okhttp3.TlsVersion;
 //import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +19,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 
@@ -93,19 +99,53 @@ public class CheckerForLinks {
         return false;
     }
 
-    public boolean requestAsync(){
-        
-        return true;
+    private OkHttpClient setAdditionalSettingsOnClient() {
+        return client.newBuilder()
+                .connectionSpecs(connectionSpecs())
+                .cookieJar(new TransientCookieJar())
+                .build();
+    }
+
+    public boolean requestSendAsync(String url) throws InterruptedException {
+        Request request = createBrowserRequest(url);
+        if(Objects.isNull(request))
+            return false;
+
+        OkHttpClient httpClient = setAdditionalSettingsOnClient();
+        CompletableFuture<String> str = new CompletableFuture<>();
+        Thread.sleep(500);
+        httpClient.newCall(request).enqueue(new Callback() {
+
+            @Override public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+
+            @Override public void onResponse(Call call, Response response) throws IOException {
+                try(ResponseBody responseBody = response.body()) {
+                    if(!response.isSuccessful() && response.code() != 404) {
+                        throw new IOException("Failed with code " + response);
+                    }
+                    if(response.code() == 404) {
+                        str.complete("delete");
+                    }else if(response.isRedirect()) {
+                        str.complete("redirected");
+                        logger.info("Call was redirected, marked for further checking: " + url);
+                    } else {
+                        str.complete("valid");
+                    }
+                }
+            }
+        });
+        if(Objects.isNull(str)) return false;
+        if(str.equals("delete")) return false;
+        else return true;
     }
 
     public boolean requestSender(String url){
         Request request = createBrowserRequest(url);
         if(request == null) return false;
         String originalUrl = request.url().toString();
-        OkHttpClient requestClient = client.newBuilder()
-                .connectionSpecs(connectionSpecs())
-                .cookieJar(new TransientCookieJar())
-                .build();
+        OkHttpClient requestClient = setAdditionalSettingsOnClient();
 
         // The 'try-with-resources' ensures the response/connection is handled correctly
         try (Response response = requestClient.newCall(request).execute()) {
@@ -147,9 +187,14 @@ public class CheckerForLinks {
 
     public void startCheck(){
         for (int i = 0; i < urls.size(); i++) {
-            if(requestSender(urls.get(i))) {
-                urls.remove(i);
-                i--;
+            try {
+                if (!requestSendAsync(urls.get(i))) {
+                    //if(requestSender(urls.get(i))) {
+                    urls.remove(i);
+                    i--;
+                }
+            } catch(InterruptedException e) {
+                logger.severe("Thread " + Thread.currentThread().getName() + " Error: " + e.getMessage());
             }
         }
     }

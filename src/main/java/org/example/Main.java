@@ -13,10 +13,13 @@ public class Main {
         System.out.println(urlsForDeletion);
     }
 
-
-    public static void main(String[] args) {
+    public static void serviceStart(){
         Delegator delegator = new Delegator();
         System.out.println(delegator.callOnePage());
         delegator.startSendingRequests();
+    }
+
+    public static void main(String[] args) {
+        serviceStart();
     }
 }
