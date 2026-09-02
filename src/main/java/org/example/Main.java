@@ -1,7 +1,12 @@
 package org.example;
 
+import org.example.dtos.JobStatus;
+import org.example.dtos.UpdateDTO;
+import org.example.model.JobLink;
 import org.example.service.Delegator;
 import org.example.service_invalid.ActionInitiator;
+import org.example.service_v2.APICaller;
+import org.example.service_v2.TaskDelegator;
 
 import java.util.List;
 
@@ -19,7 +24,13 @@ public class Main {
         delegator.startSendingRequests();
     }
 
+    public static void serviceV2Start() {
+        TaskDelegator delegator = new TaskDelegator();
+        delegator.startSendingRequests();
+    }
+
     public static void main(String[] args) {
-        serviceStart();
+        //serviceStart();
+        serviceV2Start();
     }
 }

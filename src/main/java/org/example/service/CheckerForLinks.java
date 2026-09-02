@@ -5,15 +5,12 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.CipherSuite;
 import okhttp3.ConnectionSpec;
-import okhttp3.Dispatcher;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.TlsVersion;
-//import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -26,7 +23,6 @@ import java.util.logging.Logger;
 
 public class CheckerForLinks {
     private final OkHttpClient client;
-    //private final Logger logger = LoggerFactory.getLogger(CheckerForLinks.class);
     private Logger logger = Logger.getLogger(CheckerForLinks.class.getName());
     private List<String> urls;
 

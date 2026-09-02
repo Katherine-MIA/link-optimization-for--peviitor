@@ -2,7 +2,6 @@ package org.example.service;
 
 
 import com.google.gson.Gson;
-import jdk.jfr.ContentType;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -10,13 +9,12 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.example.model.Job;
 import org.example.model.ResponseWrapper;
-import org.example.model.UrlsDTO;
+import org.example.dtos.UrlsDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
 
 public class APICaller {

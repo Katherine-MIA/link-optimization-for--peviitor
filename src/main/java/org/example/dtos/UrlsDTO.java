@@ -1,4 +1,4 @@
-package org.example.model;
+package org.example.dtos;
 
 import java.util.List;
 

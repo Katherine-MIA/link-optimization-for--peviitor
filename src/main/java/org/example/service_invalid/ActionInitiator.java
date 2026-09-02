@@ -3,7 +3,7 @@ package org.example.service_invalid;
 import com.google.gson.Gson;
 import org.example.model.Job;
 import org.example.model.ResponseWrapper;
-import org.example.model.UrlsDTO;
+import org.example.dtos.UrlsDTO;
 
 import java.io.IOException;
 import java.net.URI;
